@@ -25,40 +25,15 @@ class RequestHandler(object):
             except IndexError:
                 raise #@@TODO
 
-            this_ticket = db("SELECT `order` "
-                             "FROM task_list_child_ticket "
-                             "WHERE task_list=%s "
-                             "AND ticket=%s",
-                             [task_list.id, ticket_id])
-            try:
-                this_ticket = this_ticket[0]
-            except IndexError:
-                raise #@@TODO
+            this_ticket = task_list.get_ticket(db, ticket_id)
+            next_ticket = this_ticket.next(db)
+            prev_ticket = this_ticket.prev(db)
 
-            this_ticket_position = this_ticket[0]
-            next_ticket = db("SELECT ticket "
-                             "FROM task_list_child_ticket "
-                             "WHERE task_list=%s "
-                             "AND `order` > %s LIMIT 1",
-                             [task_list.id, this_ticket_position])
-            try:
-                next_ticket = next_ticket[0]
-            except IndexError:
-                next_ticket = None
-            last_ticket = db("SELECT ticket "
-                             "FROM task_list_child_ticket "
-                             "WHERE task_list=%s "
-                             "AND `order` < %s LIMIT 1",
-                             [task_list.id, this_ticket_position])
-            try:
-                last_ticket = last_ticket[0]
-            except IndexError:
-                last_ticket = None
         return {
             "task_list": tasklist,
             "ticket": this_ticket,
             "next": next_ticket,
-            "prev": last_ticket,
+            "prev": prev_ticket,
             }
         
     def list_tasklists(cls, self, req):
@@ -74,23 +49,11 @@ class RequestHandler(object):
         tasklist_id = req.args['tasklist_id']
         
         with self.env.db_query as db:
-            tasklist = db("SELECT id, slug, name, "
-                          "created_at, created_by, "
-                          "description FROM task_list "
-                          "WHERE slug=%s", [tasklist_id])
-            try:
-                task_list = TaskList(*tasklist[0])
-            except IndexError:
-                raise #@@TODO
+            task_list = TaskList.load(db, tasklist_id)
+            child_tickets = task_list.list_tickets(db)
 
-            child_tickets = db("SELECT id, summary "
-                               "FROM ticket "
-                               "JOIN task_list_child_ticket "
-                               "ON ticket.id=task_list_child_ticket.ticket "
-                               "WHERE task_list_child_ticket.task_list=%s "
-                               "ORDER BY task_list_child_ticket.`order` ASC", [task_list.id])
         return {"task_list": task_list, 
-                "child_tickets": list(child_tickets)}
+                "child_tickets": child_tickets}
 
     router = {
         "GET": {
