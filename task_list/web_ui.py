@@ -11,9 +11,26 @@ from task_list.utils import json_dumps
 
 class RequestHandler(object):
 
+    def get_csrf_token(cls, self, req):
+        return {"token": req.form_token}
+
+    def put_ticket_in_tasklist(cls, self, req):
+        tasklist_id = req.args['tasklist_id']
+        ticket_id = int(req.args["tasklist_ticket"]) #@@TODO
+        order = float(req.args["order"]) #@@TODO
+
+        with self.env.db_transaction as db:
+            # @@TODO assert tasklist with tasklist_id exists
+            # @@TODO assert ticket with id exists
+            # @@TODO assert child ticket with (tasklist_id, id) does not exist
+            db("INSERT INTO task_list_child_ticket "
+               "  (task_list, ticket, `order`) VALUES "
+               "  (%s, %s, %s)", [tasklist_id, ticket_id, order])
+        return {"ok": "ok"}
+
     def show_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
-        ticket_id = int(req.args['tasklist_ticket'])
+        ticket_id = int(req.args['tasklist_ticket']) #@@TODO
 
         with self.env.db_query as db:
             tasklist = db("SELECT id, slug, name, "
@@ -54,9 +71,11 @@ class RequestHandler(object):
             child_tickets = task_list.list_tickets(db)
 
         
+        from pprint import pprint
+        pprint(child_tickets)
         from trac.ticket.query import Query
         query = Query.from_string(
-            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + 
+            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + "&" + 
             "&".join("id=%s" % task.ticket_id for task in child_tickets))
         tickets = query.execute()
 
@@ -69,9 +88,13 @@ class RequestHandler(object):
         return "query_results.html", data, None
         """
 
+        from pprint import pprint
+        pprint(tickets) 
         tickets = {ticket['id']: ticket for ticket in tickets}
         for task in child_tickets:
             task.ticket = tickets.get(task.ticket_id)
+            print task.order, task.ticket_id, task.ticket
+
 
         return "show_tasklist.html", {"task_list": task_list, 
                                       "child_tickets": child_tickets}, None
@@ -81,9 +104,10 @@ class RequestHandler(object):
             "tasklist.index": list_tasklists,
             "tasklist.show": show_tasklist,
             "tasklist.ticket": show_ticket_in_tasklist,
+            "tasklist.create_ticket": get_csrf_token,
             },
-        "POST": {
-            
+        "POST":{ 
+            "tasklist.ticket": put_ticket_in_tasklist,
             },
         }
 
@@ -112,6 +136,13 @@ class TaskListPlugin(Component):
 
     /ticket/42/tasklist/ => show the tasklist which has ticket 42 as its parent
     /ticket/42/tasklists/ => show all tasklists which contain ticket 42
+
+    Write:
+
+    POST /tasklist/ name=foo[&ticket=100] => create new tasklist
+    POST /tasklist/42/ticket/760/ order=50 => put new ticket in tasklist
+    POST /tasklist/42/ticket/ summary=foo&order=50[&...] => create new ticket and put into tasklist
+    POST /tasklist/42/ => reorder tasks
     """
 
     # IRequestHandler methods
@@ -142,8 +173,12 @@ class TaskListPlugin(Component):
             req.args['tasklist_route'] = "tasklist.show"
             req.args['tasklist_id'] = path[1]
             return True
-        if len(path) != 4 or path[2] != "ticket":
+        if path[2] != "ticket":
             return False
+        if len(path) == 3:
+            req.args['tasklist_route'] = "tasklist.create_ticket"
+            req.args['tasklist_id'] = path[1]
+            return True
         req.args['tasklist_route'] = "tasklist.ticket"
         req.args['tasklist_id'] = path[1]
         req.args['tasklist_ticket'] = path[3]

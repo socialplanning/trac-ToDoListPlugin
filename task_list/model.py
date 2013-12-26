@@ -72,6 +72,9 @@ class TaskList(object):
 
 class Task(object):
     
+    def __repr__(self):
+        return u'<Task (ticket %s) in TaskList %s>' % (self.ticket_id, self.task_list_id)
+
     def __init__(self, task_list, ticket, order):
         self.task_list_id = task_list
         self.ticket_id = ticket
