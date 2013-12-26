@@ -1,0 +1,22 @@
+#tasklist .plus {
+  border-radius: 15px;
+  padding: 1px 3px;
+  background-color: lightgreen;
+  margin-left: 20px;
+}
+
+#tasklist li#tasklist-newticket {
+  list-style-type: none;
+}
+
+#tasklist-newticket h2 {
+  display: inline-block; 
+  padding-right: 1em;
+  font-weight: lighter;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+#tasklist-newticket input[name=field_summary] {
+  width: 50em;
+}

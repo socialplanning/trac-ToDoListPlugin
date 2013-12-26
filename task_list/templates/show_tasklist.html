@@ -5,26 +5,37 @@
       xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="layout.html" />
-  <head></head>
+  <head>
+    <link rel="stylesheet" type="text/css" href="${req.href.chrome('common/css/ticket.css')}" />
+    <link rel="stylesheet" type="text/css" href="${req.href.chrome('tasklist/tasklist.css')}" />
+    <link rel="stylesheet" type="text/css" href="${req.href.chrome('tasklist/jquery.modal.css')}" />
+    <script type="text/javascript" src="${req.href.chrome('tasklist/tasklist.js')}"></script>
+    <script type="text/javascript" src="${req.href.chrome('tasklist/jquery.modal.min.js')}"></script>
+  </head>
   <body>
     <div id="content">
 
       <h1>${task_list.name}</h1>
 
       <div class="trac-content">
-        <ol>
+        <ol id="tasklist" data-slug="${task_list.slug}" data-id="${task_list.id}">
           <li data-order="${task.order}" py:for="task in child_tickets">
-            <a href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
+            <a data-ticket-href="${req.href.ticket(task.ticket.id)}" class="ticket" href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
+          </li>
+
+          <li id="tasklist-newticket">
+            <form method="post" 
+                  action="${req.href.tasklist(task_list.id, 'ticket')}">
+              
+              <h2>Add Ticket</h2>
+              <input name="order" value="0" />
+              <input name="field_summary" placeholder="Short summary" />
+              
+              <input type="submit" />
+            </form>
           </li>
         </ol>
       </div>
-
-      <form method="post" action="${req.href.tasklist(task_list.id, 'ticket')}">
-        <input name="order" value="0" />
-        <input name="field_summary" placeholder="Short summary" />
-
-        <input type="submit" />
-      </form>
     </div>
   </body>
 </html>

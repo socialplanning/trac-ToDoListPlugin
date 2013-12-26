@@ -44,8 +44,12 @@ class RequestHandler(object):
                "  (task_list, ticket, `order`) VALUES "
                "  (%s, %s, %s)", [req.args['tasklist_id'], ticket.id, req.args['order']])
 
-        if req.get_header('X-Requested-With') == "XMLHTTPRequest":
-            return {"id": ticket.id, "values": ticket.values}
+        if req.get_header('X-Requested-With') == "XMLHttpRequest":
+            return {"id": ticket.id, 
+                    "href": req.href.tasklist(task_list.slug, 'ticket', ticket.id),
+                    "order": float(req.args['order']),
+                    "values": ticket.values,
+                    }
         return req.redirect(req.href.tasklist(task_list.slug))
 
     def put_ticket_in_tasklist(cls, self, req):
@@ -80,12 +84,12 @@ class RequestHandler(object):
             next_ticket = this_ticket.next(db)
             prev_ticket = this_ticket.prev(db)
 
-        return {
+        return "ticket_box.html", {
             "task_list": tasklist,
             "ticket": this_ticket,
             "next": next_ticket,
             "prev": prev_ticket,
-            }
+            }, None
         
     def list_tasklists(cls, self, req):
         with self.env.db_query as db:
@@ -160,7 +164,7 @@ class TaskListPlugin(Component):
         return [resource_filename(__name__, 'templates')]
 
     def get_htdocs_dirs(self):
-        return [('pastebin', resource_filename(__name__, 'htdocs'))]
+        return [('tasklist', resource_filename(__name__, 'htdocs'))]
 
     """
     URLs:
