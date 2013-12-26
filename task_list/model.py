@@ -1,3 +1,4 @@
+from collections import namedtuple
 
 class TaskList(object):
 
@@ -13,24 +14,44 @@ class TaskList(object):
             raise #@@TODO
         return cls(*tasklist)
 
+    @classmethod
+    def overview(cls, db):
+        tasklists = db("SELECT id, slug, name "
+                       "FROM task_list")
+        tasklists = [TaskList(*i) for i in tasklists]
+        ticket_statuses = db("SELECT task_list, count(distinct ticket.id) "
+                             "FROM task_list_child_ticket JOIN ticket "
+                             "ON ticket.id=task_list_child_ticket.ticket "
+                             "WHERE status <> 'closed' "
+                             "GROUP BY task_list "
+                             "ORDER BY task_list")
+        ticket_statuses = list(ticket_statuses)
+
+        TaskListOverview = namedtuple("TaskListOverview", "task_list_id num_tickets")
+        return {i[0]: TaskListOverview(*i) for i in ticket_statuses}
+
     def __init__(self, id, slug, name, 
                  created_at=None, created_by=None,
-                 description=None):
+                 description=None, overview=None):
         self.id = int(id)
         self.slug = slug
         self.name = name
+        self.open_tickets = overview.num_tickets if overview else 0
 
     def to_json(self):
         return {
             'id': self.id,
             'slug': self.slug,
             'name': self.name,
-            }
+            'open_tickets': self.open_tickets
+           } 
 
     def list_tickets(self, db):
         child_tickets = db("SELECT ticket, `order` "
-                           "FROM task_list_child_ticket "
-                           "WHERE task_list_child_ticket.task_list=%s "
+                           "FROM task_list_child_ticket JOIN ticket "
+                           "ON ticket.id=task_list_child_ticket.ticket "
+                           "WHERE status <> 'closed' "
+                           "AND task_list_child_ticket.task_list=%s "
                            "ORDER BY task_list_child_ticket.`order` ASC", [self.id])
         return [
             Task(self.id, ticket[0], ticket[1])
@@ -65,8 +86,10 @@ class Task(object):
 
     def next(self, db):
         next_ticket = db("SELECT ticket, `order` "
-                         "FROM task_list_child_ticket "
-                         "WHERE task_list=%s "
+                         "FROM task_list_child_ticket JOIN ticket "
+                         "ON ticket.id=task_list_child_ticket.ticket "
+                         "WHERE status <> 'closed' "
+                         "AND task_list=%s "
                          "AND `order` > %s LIMIT 1",
                          [self.task_list_id, self.order])
         try:
@@ -78,8 +101,10 @@ class Task(object):
 
     def prev(self, db):
         next_ticket = db("SELECT ticket, `order` "
-                         "FROM task_list_child_ticket "
-                         "WHERE task_list=%s "
+                         "FROM task_list_child_ticket JOIN ticket "
+                         "ON ticket.id=task_list_child_ticket.ticket "
+                         "WHERE status <> 'closed' "
+                         "AND task_list=%s "
                          "AND `order` < %s LIMIT 1",
                          [self.task_list_id, self.order])
         try:

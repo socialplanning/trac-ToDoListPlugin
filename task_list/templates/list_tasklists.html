@@ -2,13 +2,31 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
   <head></head>
   <body>
-    <ol>
-      <li py:for="tasklist in task_lists">
-        <a href="${req.href.list(tasklist)}">${tasklist}</a>
-      </li>
-    </ol>
+    <div id="content">
+      <h1>Task Lists</h1>
+
+      <div class="trac-content">
+        <h2>Active Task Lists</h2>
+        <ol>
+          <li py:for="tasklist in task_lists" py:if="tasklist.open_tickets">
+            <a href="${req.href.tasklist(tasklist.slug)}">${tasklist.name}</a>
+            &ndash; ${tasklist.open_tickets} uncompleted tasks
+          </li>
+        </ol>
+      </div>
+      <div class="trac-content">
+        <h2>Completed Task Lists</h2>
+        <ul>
+          <li py:for="tasklist in task_lists" py:if="not tasklist.open_tickets">
+            <a href="${req.href.tasklist(tasklist.slug)}">${tasklist.name}</a>
+          </li>      
+        </ul>
+      </div>
+    </div>
   </body>
 </html>

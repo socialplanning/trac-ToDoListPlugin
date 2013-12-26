@@ -38,12 +38,13 @@ class RequestHandler(object):
         
     def list_tasklists(cls, self, req):
         with self.env.db_query as db:
+            overview = TaskList.overview(db)
             resp = db("SELECT id, slug, name FROM task_list "
                       "ORDER BY name ASC")
         task_lists = []
         for row in resp:
-            task_lists.append(TaskList(*row))
-        return {"task_lists": task_lists}
+            task_lists.append(TaskList(*row, overview=overview.get(row[0])))
+        return "list_tasklists.html", {"task_lists": task_lists}, None
 
     def show_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
@@ -52,8 +53,28 @@ class RequestHandler(object):
             task_list = TaskList.load(db, tasklist_id)
             child_tickets = task_list.list_tickets(db)
 
-        return {"task_list": task_list, 
-                "child_tickets": child_tickets}
+        
+        from trac.ticket.query import Query
+        query = Query.from_string(
+            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + 
+            "&".join("id=%s" % task.ticket_id for task in child_tickets))
+        tickets = query.execute()
+
+        """
+        from trac.web.chrome import web_context, Chrome
+        context = web_context(req, "query")
+
+        data = query.template_data(context, tickets, req=req)
+
+        return "query_results.html", data, None
+        """
+
+        tickets = {ticket['id']: ticket for ticket in tickets}
+        for task in child_tickets:
+            task.ticket = tickets.get(task.ticket_id)
+
+        return "show_tasklist.html", {"task_list": task_list, 
+                                      "child_tickets": child_tickets}, None
 
     router = {
         "GET": {
@@ -67,7 +88,7 @@ class RequestHandler(object):
         }
 
     def GET_index_for_ticket(self, req):
-        pass
+        pas
 
     def GET_show_for_ticket(self, req):
         pass
@@ -133,7 +154,10 @@ class TaskListPlugin(Component):
 
         handler = RequestHandler.router[req.method][req.args.get("tasklist_route")]
         resp = handler(RequestHandler, self, req)
-        req.send(json_dumps(resp))
+        if isinstance(resp, dict):
+            req.send(json_dumps(resp))
+        else:
+            return resp
 
 
     # INavigationContributor methods
@@ -142,5 +166,5 @@ class TaskListPlugin(Component):
 
     def get_navigation_items(self, req):
         yield ('mainnav', 'tasklist',
-               tag.a(_('Task Lists'), href=req.href.list()) )
+               tag.a(_('Task Lists'), href=req.href.tasklist()) )
         

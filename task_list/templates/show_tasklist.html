@@ -2,13 +2,22 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
       xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
   <head></head>
   <body>
-    <ol>
-      <li py:for="task in tasks">
-        <a href="${req.href.list(tasklist, task['ticket'])}">${task['summary']}</a>
-      </li>
-    </ol>
+    <div id="content">
+
+      <h1>${task_list.name}</h1>
+
+      <div class="trac-content">
+        <ol>
+          <li py:for="task in child_tickets">
+            <a href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
+          </li>
+        </ol>
+      </div>
+    </div>
   </body>
 </html>
