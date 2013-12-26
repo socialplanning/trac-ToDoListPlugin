@@ -2,6 +2,7 @@ from genshi.builder import tag
 from pkg_resources import resource_filename
 import re
 from trac.core import *
+from trac.util import get_reporter_id
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, Chrome
@@ -13,6 +14,25 @@ class RequestHandler(object):
 
     def get_csrf_token(cls, self, req):
         return {"token": req.form_token}
+
+    def create_ticket_in_tasklist(cls, self, req):
+        from trac.ticket.model import Ticket
+        ticket = Ticket(self.env)
+
+        ticket.populate({"status": "new", "reporter": (req.args.get("field_reporter") 
+                                                       or get_reporter_id(req, 'author')),
+                         "summary": req.args['field_summary']})
+        ticket.insert()
+
+        with self.env.db_transaction as db:
+            # @@TODO assert tasklist with tasklist_id exists
+            # @@TODO assert ticket with id exists
+            # @@TODO assert child ticket with (tasklist_id, id) does not exist
+            db("INSERT INTO task_list_child_ticket "
+               "  (task_list, ticket, `order`) VALUES "
+               "  (%s, %s, %s)", [req.args['tasklist_id'], ticket.id, req.args['order']])
+
+        return {"ok": "ok"}
 
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
@@ -108,6 +128,7 @@ class RequestHandler(object):
             },
         "POST":{ 
             "tasklist.ticket": put_ticket_in_tasklist,
+            "tasklist.create_ticket": create_ticket_in_tasklist,
             },
         }
 
