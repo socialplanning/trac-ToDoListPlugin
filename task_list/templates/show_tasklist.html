@@ -13,11 +13,18 @@
 
       <div class="trac-content">
         <ol>
-          <li py:for="task in child_tickets">
+          <li data-order="${task.order}" py:for="task in child_tickets">
             <a href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
           </li>
         </ol>
       </div>
+
+      <form method="post" action="${req.href.tasklist(task_list.id, 'ticket')}">
+        <input name="order" value="0" />
+        <input name="field_summary" placeholder="Short summary" />
+
+        <input type="submit" />
+      </form>
     </div>
   </body>
 </html>

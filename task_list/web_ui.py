@@ -16,12 +16,24 @@ class RequestHandler(object):
         return {"token": req.form_token}
 
     def create_ticket_in_tasklist(cls, self, req):
+
+        with self.env.db_query as db:
+            tasklist = db("SELECT id, slug, name, "
+                          "created_at, created_by, "
+                          "description FROM task_list "
+                          "WHERE id=%s", [req.args['tasklist_id']])
+        task_list = TaskList(*tasklist[0])
+
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env)
 
-        ticket.populate({"status": "new", "reporter": (req.args.get("field_reporter") 
-                                                       or get_reporter_id(req, 'author')),
-                         "summary": req.args['field_summary']})
+        assert "field_summary" in req.args
+        ticket_data = {field.split("field_")[1]: value for field, value in req.args.iteritems()
+                       if field.startswith("field_")}
+        ticket_data['status'] = "new"
+        ticket_data['reporter'] = (req.args.get("field_reporter")
+                                   or get_reporter_id(req, 'author'))
+        ticket.populate(ticket_data)
         ticket.insert()
 
         with self.env.db_transaction as db:
@@ -32,7 +44,9 @@ class RequestHandler(object):
                "  (task_list, ticket, `order`) VALUES "
                "  (%s, %s, %s)", [req.args['tasklist_id'], ticket.id, req.args['order']])
 
-        return {"ok": "ok"}
+        if req.get_header('X-Requested-With') == "XMLHTTPRequest":
+            return {"id": ticket.id, "values": ticket.values}
+        return req.redirect(req.href.tasklist(task_list.slug))
 
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
