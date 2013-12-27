@@ -85,12 +85,12 @@ class RequestHandler(object):
             next_ticket = this_ticket.next(db)
             prev_ticket = this_ticket.prev(db)
 
-        return "ticket_box.html", {
+        return {
             "task_list": tasklist,
             "ticket": this_ticket,
             "next": next_ticket,
             "prev": prev_ticket,
-            }, None
+            }
         
     def list_tasklists(cls, self, req):
         with self.env.db_query as db:

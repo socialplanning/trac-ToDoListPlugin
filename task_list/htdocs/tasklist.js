@@ -26,10 +26,26 @@ jQuery(document).ready(function($) {
     $(form).insertAfter(this);
   });
   $("#tasklist").on("click", "a.ticket", function() {
+    var href = $(this).attr("href");
     $.get($(this).data("ticket-href"), function(html) { 
-      var container = $("<div>").html(html);
-      $("body").remove("#ticket");
-      container.find("#ticket").appendTo("body").modal();
+      $.get(href, function(json) {
+        json = JSON.parse(json);
+        var container = $("<div>").html(html);
+        $("body").remove("#ticket-container");
+        var new_container = $("<div>").attr("id", "ticket-container"),
+            header = "<div class='tasklist-nav nav'><ul>";
+/*        if( json.prev ) {
+          header += "<li class='first'><a rel='prev' href='#'>Previous</a></li>";
+        }
+        if( json.next ) {
+          header += "<li class='last'><a rel='next' href='#'>Next</a></li>";
+        }
+        header += "</ul></div>";
+*/
+        new_container.html(header);
+        container.find("#ticket").appendTo(new_container);
+        new_container.appendTo("body").modal();
+      });
     });
     return false;
   });
