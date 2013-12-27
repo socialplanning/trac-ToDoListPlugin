@@ -47,6 +47,7 @@ class RequestHandler(object):
         if req.get_header('X-Requested-With') == "XMLHttpRequest":
             return {"id": ticket.id, 
                     "href": req.href.tasklist(task_list.slug, 'ticket', ticket.id),
+                    "ticket_href": req.href.ticket(ticket.id),
                     "order": float(req.args['order']),
                     "values": ticket.values,
                     }

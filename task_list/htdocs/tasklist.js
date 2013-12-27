@@ -6,11 +6,13 @@ jQuery(document).ready(function($) {
   form.find("input[name=order], input[type=submit]").hide();
   form.find("input[name=order]").val( end_of_line );
   
-  $("#tasklist > li:not(#tasklist-newticket)").on("mouseover", function() {
+  $("#tasklist").on("mouseover", "li:not(#tasklist-newticket)", function() {
     $(this).append("<a href='#' class='plus'>&#43;</a>");
-  }).on("mouseout", function() {
+  });
+  $("#tasklist").on("mouseout", "li:not(#tasklist-newticket)", function() {
     $(this).find(".plus").remove();
-  }).on("click", function() {
+  });
+  $("#tasklist").on("click", "li:not(#tasklist-newticket)", function() {
     var this_pos = parseFloat($(this).closest("li:not(#tasklist-newticket)").data("order")),
         next_pos = parseFloat($(this).closest("li").next("li:not(#tasklist-newticket)").data("order")),
         new_pos = null;
@@ -22,7 +24,8 @@ jQuery(document).ready(function($) {
     $(form).find("input[name=order]").val(new_pos);
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
     $(form).insertAfter(this);
-  }).find("a.ticket").on("click", function() {
+  });
+  $("#tasklist").on("click", "a.ticket", function() {
     $.get($(this).data("ticket-href"), function(html) { 
       var container = $("<div>").html(html);
       $("body").remove("#ticket");
@@ -42,7 +45,9 @@ jQuery(document).ready(function($) {
     $.post($(this).attr("action"), data).done(function(resp) {
       resp = JSON.parse(resp);
       var li = $("<li>").attr("data-order", resp.order);
-      var a = $("<a>").addClass("ticket").attr("href", resp.href).text(resp.values.summary).appendTo(li);
+      var a = $("<a>").addClass("ticket")
+               .attr("data-ticket-href", resp.ticket_href)
+               .attr("href", resp.href).text(resp.values.summary).appendTo(li);
       li.insertBefore(form);
     });
     $(form).find("input[name=field_summary]").val("");
