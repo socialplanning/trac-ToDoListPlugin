@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
-//  var
+  var
       form = $("#tasklist-newticket"),
-      end_of_line = parseFloat( $("#tasklist > li[data-order]:last").data("order") ) + 1;
+      end_of_line = (parseFloat( $("#tasklist > li[data-order]:last").data("order") ) + 1) || 0;
 
   form.find("input[name=order], input[type=submit]").hide();
   form.find("input[name=order]").val( end_of_line );
@@ -25,8 +25,13 @@ jQuery(document).ready(function($) {
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
     $(form).insertAfter(this);
   });
+  $("#tasklist").on("click", ".act", function() {
+    var href = $(this).closest("li").find("a.ticket").attr("href");
+    $.post(href);
+    return false;
+  });
   $("#tasklist").on("click", "a.ticket", function() {
-    var href = $(this).attr("href");
+    var href = $(this).attr("href") + "/act";
     $.get($(this).data("ticket-href"), function(html) { 
       $.get(href, function(json) {
         json = JSON.parse(json);
@@ -60,7 +65,7 @@ jQuery(document).ready(function($) {
     var data = $(this).serialize();
     $.post($(this).attr("action"), data).done(function(resp) {
       resp = JSON.parse(resp);
-      var li = $("<li>").attr("data-order", resp.order);
+      var li = $("<li><span class='act'>!</span></li>").attr("data-order", resp.order);
       var a = $("<a>").addClass("ticket")
                .attr("data-ticket-href", resp.ticket_href)
                .attr("href", resp.href).text(resp.values.summary).appendTo(li);

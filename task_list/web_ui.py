@@ -53,6 +53,25 @@ class RequestHandler(object):
                     }
         return req.redirect(req.href.tasklist(task_list.slug))
 
+    def act_on_ticket(cls, self, req):
+        tasklist_id = req.args['tasklist_id']
+        ticket_id = int(req.args["tasklist_ticket"]) #@@TODO
+
+        from trac.ticket.model import Ticket
+        ticket = Ticket(self.env, tkt_id=ticket_id)
+        ticket._old['status'] = ticket.values['status']
+        ticket.values['status'] = "closed"
+        ticket.save_changes()
+
+        return {"ok": "ok"}
+
+        from trac.ticket.api import TicketSystem
+        actions = TicketSystem(self.env).get_available_actions(req, ticket)
+
+        if "close" not in actions:
+            raise AssertionError
+
+
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
         ticket_id = int(req.args["tasklist_ticket"]) #@@TODO
@@ -148,6 +167,7 @@ class RequestHandler(object):
         "POST":{ 
             "tasklist.ticket": put_ticket_in_tasklist,
             "tasklist.create_ticket": create_ticket_in_tasklist,
+            "tasklist.act_on_ticket": act_on_ticket,
             },
         }
 
@@ -222,6 +242,8 @@ class TaskListPlugin(Component):
         req.args['tasklist_route'] = "tasklist.ticket"
         req.args['tasklist_id'] = path[1]
         req.args['tasklist_ticket'] = path[3]
+        if len(path) == 4:
+            req.args['tasklist_route'] = "tasklist.act_on_ticket"
         return True
 
     def process_request(self, req):

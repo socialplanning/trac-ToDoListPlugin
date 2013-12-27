@@ -20,6 +20,7 @@
       <div class="trac-content">
         <ol id="tasklist" data-slug="${task_list.slug}" data-id="${task_list.id}">
           <li data-order="${task.order}" py:for="task in child_tickets">
+            <span class="act">!</span>
             <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
                class="ticket" 
                href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
