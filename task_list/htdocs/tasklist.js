@@ -26,8 +26,9 @@ jQuery(document).ready(function($) {
     $(form).insertAfter(this);
   });
   $("#tasklist").on("click", ".act", function() {
-    var href = $(this).closest("li").find("a.ticket").attr("href");
-    $.post(href);
+    var li = $(this).closest("li"),
+        href = li.find("a.ticket").attr("href");
+    $.post(href).done(function() { li.remove(); });
     return false;
   });
   $("#tasklist").on("click", "a.ticket", function() {
