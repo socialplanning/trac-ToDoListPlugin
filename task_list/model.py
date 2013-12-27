@@ -1,3 +1,5 @@
+import json
+
 class TaskList(object):
 
     @classmethod
@@ -6,12 +8,14 @@ class TaskList(object):
             if slug:
                 tasklist = db("SELECT id, slug, name, "
                               "created_at, created_by, "
-                              "description FROM task_list "
+                              "description, configuration "
+                              "FROM task_list "
                               "WHERE slug=%s", [slug])
             else:
                 tasklist = db("SELECT id, slug, name, "
                               "created_at, created_by, "
-                              "description FROM task_list "
+                              "description, configuration "
+                              "FROM task_list "
                               "WHERE id=%s", [id])
         try:
             tasklist = tasklist[0]
@@ -31,20 +35,21 @@ class TaskList(object):
 
     def __init__(self, env, id, slug, name, 
                  created_at=None, created_by=None,
-                 description=None, count_tickets=False):
+                 description=None, configuration=None,
+                 count_tickets=False):
         self.env = env
 
         self.id = int(id)
         self.slug = slug
         self.name = name
+
+        self.configuration = None
+        if configuration is not None:
+            self.configuration = json.loads(configuration)
+
+        self.active_tickets = None
         if count_tickets:
             self.active_tickets = self.count_tickets() or 0
-        else:
-            self.active_tickets = None
-        self._ticket_workflow_actions = {
-            "closed": "reopen",
-            "*": "resolve",
-            }
 
     def to_json(self):
         return {
@@ -54,13 +59,23 @@ class TaskList(object):
             'active_tickets': self.active_tickets
            } 
 
-    def get_action_for_ticket(self, req, ticket):
-        return self._ticket_workflow_actions.get(ticket['status']) or \
-            self._ticket_workflow_actions['*']
+    def get_action_for_ticket(self, ticket):
+        map = None
+        if self.configuration:
+            map = self.configuration.get("ticket_action_map")
+        if map is None:
+            map = {"*": "resolve"}
+        action = map.get(ticket['status']) or map.get("*")
+        return action
 
     @property
     def ticket_status_blacklist(self):
-        return ["reopened"]
+        statuses = None
+        if self.configuration:
+            statuses = self.configuration.get("ticket_status_blacklist")
+        if statuses is None:
+            statuses = ["closed"]
+        return statuses
 
     def _ticket_status_blacklist_sql(self):
         sql = []

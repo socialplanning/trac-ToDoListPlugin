@@ -57,7 +57,7 @@ class RequestHandler(object):
 
         task_list = TaskList.load(self.env, slug=tasklist_id)
 
-        user_action = task_list.get_action_for_ticket(req, ticket)
+        user_action = task_list.get_action_for_ticket(ticket)
 
         from trac.ticket.api import TicketSystem
         system = TicketSystem(self.env)
@@ -128,8 +128,8 @@ class RequestHandler(object):
         pprint(child_tickets)
         from trac.ticket.query import Query
         query = Query.from_string(
-            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + "&" + 
-            "&".join("id=%s" % task.ticket_id for task in child_tickets))
+            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + (
+                ("&" + "&".join("id=%s" % task.ticket_id for task in child_tickets)) if child_tickets else ""))
         tickets = query.execute()
 
         """

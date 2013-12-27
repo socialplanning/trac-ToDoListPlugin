@@ -21,6 +21,7 @@ jQuery(document).ready(function($) {
     } else {
       new_pos = (this_pos + next_pos) / 2.0;
     }
+console.log(this_pos, next_pos, new_pos);
     $(form).find("input[name=order]").val(new_pos);
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
     $(form).insertAfter(this);
