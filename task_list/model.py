@@ -37,6 +37,10 @@ class TaskList(object):
         self.slug = slug
         self.name = name
         self.open_tickets = overview.num_tickets if overview else 0
+        self._ticket_workflow_actions = {
+            "closed": "reopen",
+            "*": "resolve",
+            }
 
     def to_json(self):
         return {
@@ -45,6 +49,10 @@ class TaskList(object):
             'name': self.name,
             'open_tickets': self.open_tickets
            } 
+
+    def get_action_for_ticket(self, req, ticket):
+        return self._ticket_workflow_actions.get(ticket['status']) or \
+            self._ticket_workflow_actions['*']
 
     def list_tickets(self, db):
         child_tickets = db("SELECT ticket, `order` "

@@ -60,15 +60,27 @@ class RequestHandler(object):
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env, tkt_id=ticket_id)
 
+        with self.env.db_query as db:
+            tasklist = db("SELECT id, slug, name, "
+                          "created_at, created_by, "
+                          "description FROM task_list "
+                          "WHERE slug=%s", [tasklist_id])
+            try:
+                task_list = TaskList(*tasklist[0])
+            except IndexError:
+                raise #@@TODO
+
+        user_action = task_list.get_action_for_ticket(req, ticket)
+
         from trac.ticket.api import TicketSystem
         system = TicketSystem(self.env)
 
         field_changes = {}
         for controller in system.action_controllers:
             actions = [a for w, a in controller.get_ticket_actions(req, ticket)]
-            if "resolve" not in actions:
+            if user_action not in actions:
                 continue
-            action_changes = controller.get_ticket_changes(req, ticket, "resolve")
+            action_changes = controller.get_ticket_changes(req, ticket, user_action)
             field_changes.update(action_changes)
 
         for key, value in field_changes.items():
