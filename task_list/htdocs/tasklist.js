@@ -28,7 +28,7 @@ jQuery(document).ready(function($) {
   $("#tasklist").on("click", ".act", function() {
     var li = $(this).closest("li"),
         href = li.find("a.ticket").attr("href");
-    $.post(href).done(function() { li.remove(); });
+    $.post(href).done(function(resp) { resp = JSON.parse(resp); if( resp.remove ) { li.remove(); }});
     return false;
   });
   $("#tasklist").on("click", "a.ticket", function() {

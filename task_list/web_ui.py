@@ -63,7 +63,7 @@ class RequestHandler(object):
         ticket.values['status'] = "closed"
         ticket.save_changes()
 
-        return {"ok": "ok"}
+        return {"ok": "ok", "remove": True}
 
         from trac.ticket.api import TicketSystem
         actions = TicketSystem(self.env).get_available_actions(req, ticket)
