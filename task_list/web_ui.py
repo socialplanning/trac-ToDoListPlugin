@@ -18,11 +18,7 @@ class RequestHandler(object):
     def create_ticket_in_tasklist(cls, self, req):
 
         with self.env.db_query as db:
-            tasklist = db("SELECT id, slug, name, "
-                          "created_at, created_by, "
-                          "description FROM task_list "
-                          "WHERE id=%s", [req.args['tasklist_id']])
-        task_list = TaskList(*tasklist[0])
+            task_list = TaskList.load(db, id=req.args['tasklist_id'])
 
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env)
@@ -61,14 +57,7 @@ class RequestHandler(object):
         ticket = Ticket(self.env, tkt_id=ticket_id)
 
         with self.env.db_query as db:
-            tasklist = db("SELECT id, slug, name, "
-                          "created_at, created_by, "
-                          "description FROM task_list "
-                          "WHERE slug=%s", [tasklist_id])
-            try:
-                task_list = TaskList(*tasklist[0])
-            except IndexError:
-                raise #@@TODO
+            task_list = TaskList.load(db, id=tasklist_id)
 
         user_action = task_list.get_action_for_ticket(req, ticket)
 
@@ -110,14 +99,7 @@ class RequestHandler(object):
         ticket_id = int(req.args['tasklist_ticket']) #@@TODO
 
         with self.env.db_query as db:
-            tasklist = db("SELECT id, slug, name, "
-                          "created_at, created_by, "
-                          "description FROM task_list "
-                          "WHERE slug=%s", [tasklist_id])
-            try:
-                task_list = TaskList(*tasklist[0])
-            except IndexError:
-                raise #@@TODO
+            task_list = TaskList.load(slug=tasklist_id)
 
             this_ticket = task_list.get_ticket(db, ticket_id)
             next_ticket = this_ticket.next(db)
@@ -144,7 +126,7 @@ class RequestHandler(object):
         tasklist_id = req.args['tasklist_id']
         
         with self.env.db_query as db:
-            task_list = TaskList.load(db, tasklist_id)
+            task_list = TaskList.load(db, slug=tasklist_id)
             child_tickets = task_list.list_tickets(db)
 
         

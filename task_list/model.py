@@ -3,11 +3,17 @@ from collections import namedtuple
 class TaskList(object):
 
     @classmethod
-    def load(cls, db, slug):
-        tasklist = db("SELECT id, slug, name, "
-                      "created_at, created_by, "
-                      "description FROM task_list "
-                      "WHERE slug=%s", [slug])
+    def load(cls, db, slug=None, id=None):
+        if slug:
+            tasklist = db("SELECT id, slug, name, "
+                          "created_at, created_by, "
+                          "description FROM task_list "
+                          "WHERE slug=%s", [slug])
+        else:
+            tasklist = db("SELECT id, slug, name, "
+                          "created_at, created_by, "
+                          "description FROM task_list "
+                          "WHERE id=%s", [id])
         try:
             tasklist = tasklist[0]
         except IndexError:
