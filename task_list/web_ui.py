@@ -59,18 +59,25 @@ class RequestHandler(object):
 
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env, tkt_id=ticket_id)
-        ticket._old['status'] = ticket.values['status']
-        ticket.values['status'] = "closed"
-        ticket.save_changes()
-
-        return {"ok": "ok", "remove": True}
 
         from trac.ticket.api import TicketSystem
-        actions = TicketSystem(self.env).get_available_actions(req, ticket)
+        system = TicketSystem(self.env)
 
-        if "close" not in actions:
-            raise AssertionError
+        field_changes = {}
+        for controller in system.action_controllers:
+            actions = [a for w, a in controller.get_ticket_actions(req, ticket)]
+            if "resolve" not in actions:
+                continue
+            action_changes = controller.get_ticket_changes(req, ticket, "resolve")
+            field_changes.update(action_changes)
 
+        for key, value in field_changes.items():
+            ticket[key] = value
+        ticket.save_changes()
+
+        return {"ok": "ok",
+                "remove": ticket['status'] == "closed",
+                "values": ticket.values}
 
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
