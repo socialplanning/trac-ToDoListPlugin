@@ -13,16 +13,16 @@
       <div class="trac-content">
         <h2>Active Task Lists</h2>
         <ol>
-          <li py:for="tasklist in task_lists" py:if="tasklist.open_tickets">
+          <li py:for="tasklist in task_lists" py:if="tasklist.active_tickets">
             <a href="${req.href.tasklist(tasklist.slug)}">${tasklist.name}</a>
-            &ndash; ${tasklist.open_tickets} uncompleted tasks
+            &ndash; ${tasklist.active_tickets} uncompleted tasks
           </li>
         </ol>
       </div>
       <div class="trac-content">
         <h2>Completed Task Lists</h2>
         <ul>
-          <li py:for="tasklist in task_lists" py:if="not tasklist.open_tickets">
+          <li py:for="tasklist in task_lists" py:if="not tasklist.active_tickets">
             <a href="${req.href.tasklist(tasklist.slug)}">${tasklist.name}</a>
           </li>      
         </ul>

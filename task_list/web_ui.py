@@ -17,8 +17,7 @@ class RequestHandler(object):
 
     def create_ticket_in_tasklist(cls, self, req):
 
-        with self.env.db_query as db:
-            task_list = TaskList.load(db, id=req.args['tasklist_id'])
+        task_list = TaskList.load(self.env, id=req.args['tasklist_id'])
 
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env)
@@ -56,8 +55,7 @@ class RequestHandler(object):
         from trac.ticket.model import Ticket
         ticket = Ticket(self.env, tkt_id=ticket_id)
 
-        with self.env.db_query as db:
-            task_list = TaskList.load(db, id=tasklist_id)
+        task_list = TaskList.load(self.env, slug=tasklist_id)
 
         user_action = task_list.get_action_for_ticket(req, ticket)
 
@@ -77,7 +75,7 @@ class RequestHandler(object):
         ticket.save_changes()
 
         return {"ok": "ok",
-                "remove": ticket['status'] == "closed",
+                "remove": ticket['status'] in task_list.ticket_status_blacklist,
                 "values": ticket.values}
 
     def put_ticket_in_tasklist(cls, self, req):
@@ -98,15 +96,14 @@ class RequestHandler(object):
         tasklist_id = req.args['tasklist_id']
         ticket_id = int(req.args['tasklist_ticket']) #@@TODO
 
-        with self.env.db_query as db:
-            task_list = TaskList.load(slug=tasklist_id)
+        task_list = TaskList.load(self.env, slug=tasklist_id)
 
-            this_ticket = task_list.get_ticket(db, ticket_id)
-            next_ticket = this_ticket.next(db)
-            prev_ticket = this_ticket.prev(db)
+        this_ticket = task_list.get_ticket(ticket_id)
+        next_ticket = this_ticket.next()
+        prev_ticket = this_ticket.prev()
 
         return {
-            "task_list": tasklist,
+            "task_list": task_list,
             "ticket": this_ticket,
             "next": next_ticket,
             "prev": prev_ticket,
@@ -114,21 +111,18 @@ class RequestHandler(object):
         
     def list_tasklists(cls, self, req):
         with self.env.db_query as db:
-            overview = TaskList.overview(db)
             resp = db("SELECT id, slug, name FROM task_list "
                       "ORDER BY name ASC")
         task_lists = []
         for row in resp:
-            task_lists.append(TaskList(*row, overview=overview.get(row[0])))
+            task_lists.append(TaskList(self.env, *row, count_tickets=True))
         return "list_tasklists.html", {"task_lists": task_lists}, None
 
     def show_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
         
-        with self.env.db_query as db:
-            task_list = TaskList.load(db, slug=tasklist_id)
-            child_tickets = task_list.list_tickets(db)
-
+        task_list = TaskList.load(self.env, slug=tasklist_id)
+        child_tickets = task_list.list_tickets()
         
         from pprint import pprint
         pprint(child_tickets)
