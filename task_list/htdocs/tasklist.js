@@ -21,34 +21,38 @@ console.log(this_pos, next_pos, new_pos);
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
     $(form).insertAfter($(this).closest("li"));
   });
-  $("#tasklist").on("click", "input[name=act]", function() {
+  $("#tasklist").on("click", "input[name=act]", function(evt) {
+    var showAfter = evt.shiftKey;
     var li = $(this).closest("li"),
-        href = li.find("a.ticket").attr("href");
-    $.post(href).done(function(resp) { resp = JSON.parse(resp); if( resp.remove ) { li.remove(); }});
+        href = li.find("a.ticket").attr("href"),
+        ticket_href = li.find("a.ticket").data("ticket-href");
+    $.post(href).done(function(resp) { 
+        resp = JSON.parse(resp); 
+        if( resp.remove ) { 
+            li.remove(); 
+        }
+        if( showAfter ) {
+            showModalTicket(ticket_href);
+        }
+    });
     return false;
   });
-  $("#tasklist").on("click", "a.ticket", function() {
-    var href = $(this).attr("href") + "/act";
-    $.get($(this).data("ticket-href"), function(html) { 
-      $.get(href, function(json) {
-        json = JSON.parse(json);
+
+  function showModalTicket(href) {
+    $.get(href, function(html) { 
         var container = $("<div>").html(html);
         $("body").remove("#ticket-container");
         var new_container = $("<div>").attr("id", "ticket-container"),
             header = "<div class='tasklist-nav nav'><ul>";
-/*        if( json.prev ) {
-          header += "<li class='first'><a rel='prev' href='#'>Previous</a></li>";
-        }
-        if( json.next ) {
-          header += "<li class='last'><a rel='next' href='#'>Next</a></li>";
-        }
-        header += "</ul></div>";
-*/
         new_container.html(header);
         container.find("#ticket").appendTo(new_container);
         new_container.appendTo("body").modal();
-      });
-    });
+    });      
+  };
+
+  $("#tasklist").on("click", "a.ticket", function() {
+    var href = $(this).data("ticket-href");
+    showModalTicket(href);
     return false;
   });
 
