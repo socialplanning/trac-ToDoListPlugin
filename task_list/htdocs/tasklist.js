@@ -6,13 +6,8 @@ jQuery(document).ready(function($) {
   form.find("input[name=order], input[type=submit]").hide();
   form.find("input[name=order]").val( end_of_line );
   
-  $("#tasklist").on("mouseover", "li:not(#tasklist-newticket)", function() {
-    $(this).append("<a href='#' class='plus'>&#43;</a>");
-  });
-  $("#tasklist").on("mouseout", "li:not(#tasklist-newticket)", function() {
-    $(this).find(".plus").remove();
-  });
-  $("#tasklist").on("click", "li:not(#tasklist-newticket)", function() {
+  $("#tasklist").on("click", "input[name=add]", function() {
+console.log(this);
     var this_pos = parseFloat($(this).closest("li:not(#tasklist-newticket)").data("order")),
         next_pos = parseFloat($(this).closest("li").next("li:not(#tasklist-newticket)").data("order")),
         new_pos = null;
@@ -24,9 +19,9 @@ jQuery(document).ready(function($) {
 console.log(this_pos, next_pos, new_pos);
     $(form).find("input[name=order]").val(new_pos);
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
-    $(form).insertAfter(this);
+    $(form).insertAfter($(this).closest("li"));
   });
-  $("#tasklist").on("click", ".act", function() {
+  $("#tasklist").on("click", "input[name=act]", function() {
     var li = $(this).closest("li"),
         href = li.find("a.ticket").attr("href");
     $.post(href).done(function(resp) { resp = JSON.parse(resp); if( resp.remove ) { li.remove(); }});
@@ -67,10 +62,10 @@ console.log(this_pos, next_pos, new_pos);
     var data = $(this).serialize();
     $.post($(this).attr("action"), data).done(function(resp) {
       resp = JSON.parse(resp);
-      var li = $("<li><span class='act'>!</span></li>").attr("data-order", resp.order);
+      var li = $("<li class='tasklist-ticket'><div class='inlinebuttons'><input type='button' name='add' value='+ Ticket' /><input type='button' name='act' class='trac-delete' value='Act!' /></div></li>").attr("data-order", resp.order);
       var a = $("<a>").addClass("ticket")
                .attr("data-ticket-href", resp.ticket_href)
-               .attr("href", resp.href).text(resp.values.summary).appendTo(li);
+               .attr("href", resp.href).text(resp.values.summary).prependTo(li);
       li.insertBefore(form);
     });
     $(form).find("input[name=field_summary]").val("");

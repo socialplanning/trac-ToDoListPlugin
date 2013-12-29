@@ -19,11 +19,16 @@
 
       <div class="trac-content">
         <ol id="tasklist" data-slug="${task_list.slug}" data-id="${task_list.id}">
-          <li data-order="${task.order}" py:for="task in child_tickets">
-            <span class="act">!</span>
+          <li class="tasklist-ticket ${i%2 and 'odd' or 'even'}" 
+              data-order="${task.order}" 
+              py:for="i, task in enumerate(child_tickets)">
             <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
                class="ticket" 
                href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
+            <div class="inlinebuttons">
+              <input type="button" name="add" value="+ Ticket" title="Add new ticket below" />
+              <input type="button" class="trac-delete" name="act" value="Act!" title="Act on this ticket" />
+            </div>
           </li>
 
           <li id="tasklist-newticket">
