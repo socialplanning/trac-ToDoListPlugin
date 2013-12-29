@@ -72,7 +72,8 @@ class RequestHandler(object):
 
         for key, value in field_changes.items():
             ticket[key] = value
-        ticket.save_changes()
+        ticket.save_changes(author=get_reporter_id(req, 'author'),
+                            comment=req.args.get("comment"))
 
         return {"ok": "ok",
                 "remove": ticket['status'] in task_list.ticket_status_blacklist,

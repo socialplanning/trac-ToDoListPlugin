@@ -22,6 +22,35 @@ console.log(this_pos, next_pos, new_pos);
     $(form).insertAfter($(this).closest("li"));
   });
   $("#tasklist").on("click", "input[name=act]", function(evt) {
+    var commentBefore = evt.altKey,
+        showAfter = evt.shiftKey,
+        li = $(this).closest("li"),
+        href = li.find("a.ticket").attr("href"),
+        ticket_href = li.find("a.ticket").data("ticket-href");
+      
+    if( commentBefore ) {
+        var container = $("<div>").html("<form><textarea style='width:95%' rows='5' name='comment' placeholder='Enter your comment'></textarea><input type='submit' style='margin-left: 90%' value='Go' /></form>");
+        container.find("form").on("submit", function() {
+
+            $.post(href, { __FORM_TOKEN: $("[name=__FORM_TOKEN]").val(), 
+                           comment: container.find("form [name=comment]").val() })
+             .done(function(resp) { 
+                resp = JSON.parse(resp); 
+                if( resp.remove ) { 
+                    li.remove(); 
+                }
+                if( showAfter ) {
+                    showModalTicket(ticket_href);
+                }
+            });
+            $.modal.close();
+            return false;
+        });
+        container.appendTo("body").modal();
+        window.setTimeout(function() { container.find("form [name=comment]").focus(); }, 0);
+        return false;
+    }
+
     var showAfter = evt.shiftKey;
     var li = $(this).closest("li"),
         href = li.find("a.ticket").attr("href"),
