@@ -17,7 +17,7 @@
       <input type="button" name="add" value="&darr; Ticket" title="Add new ticket below" />
       
       <py:for each="action in task.actions">
-        ${task_list.render_action(action)}
+        ${workflow_manager.render_action_button(task, action)}
       </py:for>
     </div>
   </li>

@@ -6,7 +6,11 @@ from trac.util import get_reporter_id
 from trac.util.translation import _
 from trac.web.api import IRequestHandler, ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, INavigationContributor, Chrome
+from trac.web.chrome import add_stylesheet, add_script, add_script_data
+from trac.ticket.api import TicketSystem
+from trac.ticket.model import Ticket
 
+from task_list.api import TasklistWorkflowManager
 from task_list.model import TaskList
 from task_list.utils import json_dumps 
 
@@ -19,7 +23,6 @@ class RequestHandler(object):
 
         task_list = TaskList.load(self.env, id=req.args['tasklist_id'])
 
-        from trac.ticket.model import Ticket
         ticket = Ticket(self.env)
 
         assert "field_summary" in req.args
@@ -39,20 +42,13 @@ class RequestHandler(object):
                "  (task_list, ticket, `order`) VALUES "
                "  (%s, %s, %s)", [req.args['tasklist_id'], ticket.id, req.args['order']])
 
-        from trac.web.chrome import Chrome
-        from genshi.core import Markup
         task = task_list.get_ticket(ticket.id)
-        task.ticket = ticket
-        task.actions = []
-        from trac.ticket.api import TicketSystem
-        allowed = task_list.get_all_actions()
-        for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
-            if action in allowed:
-                task.actions.append(action)
-            
+        task.actions =  TasklistWorkflowManager(self.env).allowed_actions(task_list, req, task.ticket)
+
         data = {
             "task_list": task_list,
             "task": task,
+            "workflow_manager": TasklistWorkflowManager(self.env),
             }
         list_item = Chrome(self.env).render_template(req, 'show_tasklist_ticket.html',
                                                      data, 'text/html')
@@ -65,14 +61,12 @@ class RequestHandler(object):
         tasklist_id = req.args['tasklist_id']
         ticket_id = int(req.args["tasklist_ticket"]) #@@TODO
 
-        from trac.ticket.model import Ticket
         ticket = Ticket(self.env, tkt_id=ticket_id)
 
         task_list = TaskList.load(self.env, slug=tasklist_id)
 
         user_action = req.args['action']
 
-        from trac.ticket.api import TicketSystem
         system = TicketSystem(self.env)
 
         field_changes = {}
@@ -88,20 +82,13 @@ class RequestHandler(object):
         ticket.save_changes(author=get_reporter_id(req, 'author'),
                             comment=req.args.get("comment"))
 
-        from trac.web.chrome import Chrome
-        from trac.ticket.api import TicketSystem
-        allowed = task_list.get_all_actions()
         task = task_list.get_ticket(ticket.id)
-        task.ticket = ticket
-        task.actions = []
-        for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
-            if action in allowed:
-                task.actions.append(action)
-
+        task.actions =  TasklistWorkflowManager(self.env).allowed_actions(task_list, req, task.ticket)
             
         data = {
             "task_list": task_list,
             "task": task,
+            "workflow_manager": TasklistWorkflowManager(self.env),
             }
         list_item = Chrome(self.env).render_template(req, 'show_tasklist_ticket.html',
                                                      data, 'text/html')
@@ -175,18 +162,13 @@ class RequestHandler(object):
         task_list = TaskList.load(self.env, slug=tasklist_id)
         child_tickets = task_list.list_tickets()
         
-        from trac.ticket.api import TicketSystem
-        from trac.ticket.model import Ticket
-        allowed = task_list.get_all_actions()
         for task in child_tickets:
-            task.ticket = Ticket(self.env, tkt_id=task.ticket_id)
-            task.actions = []
-            for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
-                if action in allowed:
-                    task.actions.append(action)
+            task.actions =  TasklistWorkflowManager(self.env).allowed_actions(task_list, req, task.ticket)
 
-        return "show_tasklist.html", {"task_list": task_list, 
-                                      "child_tickets": child_tickets}, None
+        return "show_tasklist.html", {
+            "task_list": task_list, 
+            "child_tickets": child_tickets,
+            "workflow_manager": TasklistWorkflowManager(self.env)}, None
 
     router = {
         "GET": {
@@ -216,7 +198,6 @@ class TaskListPlugin(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if filename == 'ticket.html':
-            from trac.web.chrome import add_stylesheet, add_script, add_script_data
             add_stylesheet(req, "tasklist/jquery.modal.css")
             add_script(req, "tasklist/jquery.modal.min.js")
             add_stylesheet(req, "tasklist/tasklist-ticket.css")

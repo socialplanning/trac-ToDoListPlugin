@@ -1,4 +1,7 @@
 import json
+from trac.ticket.model import Ticket
+
+from task_list.api import TasklistWorkflowManager
 
 class TaskList(object):
 
@@ -74,40 +77,6 @@ class TaskList(object):
     def get_all_actions(self):
         return ["resolve", "reopen", "leave", "assign"]
 
-    def render_action(self, action):
-        from genshi.core import Markup
-        if action == "leave":
-            return Markup("""
-              <label class="button">
-                <input type="hidden" name="action" value="leave" />
-                <a data-comment="required" name="act">+ Comment</a>
-              </label>
-""")
-        if action == "reopen":
-            return Markup("""
-              <label class="button">
-                <input type="hidden" name="action" value="reopen" />
-                <input checked="checked" type="checkbox" name="act" />
-                Reopen
-              </label>
-""")
-        if action == "resolve":
-            return Markup("""
-              <label class="button trac-delete">
-                <input type="hidden" name="action" value="resolve" />
-                <input type="checkbox" name="act" />
-                Close
-              </label>
-""")
-
-        return Markup("""
-              <label class="button">
-                <input type="hidden" name="action" value="%s" />
-                <a name="act" />
-                %s
-              </label>
-""" % (action, action.title()))
-
     @property
     def ticket_status_blacklist(self):
         statuses = None
@@ -179,7 +148,7 @@ class Task(object):
         self.sub_task_list = None
         if sub_task_list is not None:
             self.sub_task_list = TaskList.load(task_list.env, id=sub_task_list)
-        self.ticket = None
+        self.ticket = Ticket(self.task_list.env, self.ticket_id)
 
     def to_json(self):
         return {
