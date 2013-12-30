@@ -11,13 +11,14 @@
       >
     
     <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
+       data-ticket-id="${task.ticket_id}"
        class="ticket" 
        href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
     <div class="inlinebuttons">
       <input type="button" name="add" value="&darr; Ticket" title="Add new ticket below" />
       
       <py:for each="action in task.actions">
-        ${workflow_manager.render_action_button(task, action)}
+        ${workflow_manager.render_action_button(req, task, action)}
       </py:for>
     </div>
   </li>

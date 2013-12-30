@@ -43,6 +43,15 @@
 #tasklist li:hover .inlinebuttons {
   display: inline-block;
 }
+#tasklist li:hover .inlinebuttons .supplemental {
+  display: none;
+}
+.modal .supplemental-form input[type=submit] {
+  float: right;
+}
+.modal .supplemental-form span.hint {
+  display: block;
+}
 #tasklist .plus {
   border-radius: 15px;
   padding: 1px 3px;

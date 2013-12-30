@@ -27,8 +27,27 @@ console.log(this_pos, next_pos, new_pos);
         li = $(this).closest("li"),
         href = li.find("a.ticket").attr("href"),
         ticket_href = li.find("a.ticket").data("ticket-href"),
-        action = $(this).siblings("[name=action").val();
+        action = $(this).siblings("[name=action]").val();
 
+    var supplemental = $(this).closest("label").find(".supplemental");
+    if( supplemental.length ) {
+        var container = $("<form>").html(supplemental.html());
+        $("<div>").css("font-weight", "bold").css("margin-bottom", "10px").css("padding-bottom", "10px").css("border-bottom", "1px solid #eee").html("<a target='_blank' href='"+ticket_href+"'>#"+li.find("a.ticket").data("ticket-id") +":</a> "+ li.find("a.ticket").text()).prependTo(container);
+        container.on("submit", function() {
+            var data = { action: action };
+            $(this).find(":input").each(function() {
+                console.log(this);
+                if( $(this).attr("name") && $(this).val() ) {
+                    data[$(this).attr("name")] = $(this).val();
+                }
+            });
+            actOnTicket(href, ticket_href, li, showAfter, data);
+            $.modal.close();
+            return false;
+        });
+        container.appendTo("body").modal();
+        return false;
+    }
     if( commentBefore ) {
         var container = $("<div>").html("<form><textarea style='width:95%' rows='5' name='comment' placeholder='Enter your comment'></textarea><input type='submit' style='margin-left: 90%' value='Go' /></form>");
         

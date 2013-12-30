@@ -75,7 +75,7 @@ class TaskList(object):
            } 
 
     def get_all_actions(self):
-        return ["resolve", "reopen", "leave", "assign"]
+        return ["resolve", "reopen", "leave", "assign", "accept"]
 
     @property
     def ticket_status_blacklist(self):
