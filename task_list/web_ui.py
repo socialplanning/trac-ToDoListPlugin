@@ -184,6 +184,7 @@ class RequestHandler(object):
             for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
                 if action in allowed:
                     task.actions.append(action)
+
         return "show_tasklist.html", {"task_list": task_list, 
                                       "child_tickets": child_tickets}, None
 

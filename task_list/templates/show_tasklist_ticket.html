@@ -14,7 +14,7 @@
        class="ticket" 
        href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
     <div class="inlinebuttons">
-      <input type="button" name="add" value="+ Ticket" title="Add new ticket below" />
+      <input type="button" name="add" value="&darr; Ticket" title="Add new ticket below" />
       
       <py:for each="action in task.actions">
         ${task_list.render_action(action)}

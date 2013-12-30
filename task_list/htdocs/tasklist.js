@@ -21,20 +21,22 @@ console.log(this_pos, next_pos, new_pos);
     window.setTimeout(function() { $(form).find("input[name=field_summary]").focus(); }, 0);
     $(form).insertAfter($(this).closest("li"));
   });
-  $("#tasklist").on("click", "input[name=act]", function(evt) {
-    var commentBefore = evt.altKey,
+  $("#tasklist").on("click", "[name=act]", function(evt) {
+    var commentBefore = ($(this).data("comment") === "required" ) || evt.altKey,
         showAfter = evt.shiftKey,
         li = $(this).closest("li"),
         href = li.find("a.ticket").attr("href"),
-        ticket_href = li.find("a.ticket").data("ticket-href");
-      
+        ticket_href = li.find("a.ticket").data("ticket-href"),
+        action = $(this).siblings("[name=action").val();
+
     if( commentBefore ) {
         var container = $("<div>").html("<form><textarea style='width:95%' rows='5' name='comment' placeholder='Enter your comment'></textarea><input type='submit' style='margin-left: 90%' value='Go' /></form>");
+        
         container.find("form").on("submit", function() {
 
-            $.post(href, ticket_href, li, showAfter,
-                   { action: $(this).siblings("[name=action").val(),
-                     comment: container.find("form [name=comment]").val() });
+            actOnTicket(href, ticket_href, li, showAfter,
+                        { action: action,
+                          comment: container.find("form [name=comment]").val() });
             $.modal.close();
             return false;
         });
@@ -42,7 +44,7 @@ console.log(this_pos, next_pos, new_pos);
         window.setTimeout(function() { container.find("form [name=comment]").focus(); }, 0);
     } else {
       actOnTicket(href, ticket_href, li, showAfter, { 
-          action: $(this).siblings("[name=action").val() }
+          action: action }
                  );
     }
     return false;

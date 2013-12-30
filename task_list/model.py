@@ -72,10 +72,17 @@ class TaskList(object):
            } 
 
     def get_all_actions(self):
-        return ["resolve", "reopen", "leave"]
+        return ["resolve", "reopen", "leave", "assign"]
 
     def render_action(self, action):
         from genshi.core import Markup
+        if action == "leave":
+            return Markup("""
+              <label class="button">
+                <input type="hidden" name="action" value="leave" />
+                <a data-comment="required" name="act">+ Comment</a>
+              </label>
+""")
         if action == "reopen":
             return Markup("""
               <label class="button">
@@ -93,6 +100,14 @@ class TaskList(object):
               </label>
 """)
 
+        return Markup("""
+              <label class="button">
+                <input type="hidden" name="action" value="%s" />
+                <a name="act" />
+                %s
+              </label>
+""" % (action, action.title()))
+
     @property
     def ticket_status_blacklist(self):
         statuses = None
@@ -105,7 +120,7 @@ class TaskList(object):
     @property
     def css(self):
         return """
-li[data-status=closed] a {
+li[data-status=closed] :link {
   font-style: italic;
   text-decoration: line-through;
 }
