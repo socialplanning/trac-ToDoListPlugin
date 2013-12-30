@@ -90,11 +90,7 @@ console.log(this_pos, next_pos, new_pos);
     var data = $(this).serialize();
     $.post($(this).attr("action"), data).done(function(resp) {
       resp = JSON.parse(resp);
-      var li = $("<li class='tasklist-ticket'><div class='inlinebuttons'><input type='button' name='add' value='+ Ticket' /><input type='button' name='act' class='trac-delete' value='Act!' /></div></li>").attr("data-order", resp.order);
-      var a = $("<a>").addClass("ticket")
-               .attr("data-ticket-href", resp.ticket_href)
-               .attr("href", resp.href).text(resp.values.summary).prependTo(li);
-      li.insertBefore(form);
+      $(resp.list_item).insertBefore(form);
     });
     $(form).find("input[name=field_summary]").val("");
     return false;

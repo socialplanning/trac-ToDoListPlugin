@@ -39,14 +39,35 @@ class RequestHandler(object):
                "  (task_list, ticket, `order`) VALUES "
                "  (%s, %s, %s)", [req.args['tasklist_id'], ticket.id, req.args['order']])
 
-        if req.get_header('X-Requested-With') == "XMLHttpRequest":
-            return {"id": ticket.id, 
-                    "href": req.href.tasklist(task_list.slug, 'ticket', ticket.id),
-                    "ticket_href": req.href.ticket(ticket.id),
-                    "order": float(req.args['order']),
-                    "values": ticket.values,
-                    }
-        return req.redirect(req.href.tasklist(task_list.slug))
+        from trac.web.chrome import Chrome
+        from genshi.core import Markup
+        task = task_list.get_ticket(ticket.id)
+        task.ticket = ticket
+        if task.ticket['status'] == "closed":
+            task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Reopen
+              </label>
+""")]
+        else:
+            task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Close
+              </label>
+""")]
+            
+        data = {
+            "task_list": task_list,
+            "task": task,
+            }
+        list_item = Chrome(self.env).render_template(req, 'show_tasklist_ticket.html',
+                                                     data, 'text/html')
+        return {"ok": "ok",
+                "remove": False,
+                "list_item": list_item,
+                }
 
     def act_on_ticket(cls, self, req):
         tasklist_id = req.args['tasklist_id']
