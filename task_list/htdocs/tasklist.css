@@ -66,6 +66,11 @@
   width: 50em;
 }
 
+#tasklist li.tasklist-ticket ol {
+  padding-top: 5px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+}
 #tasklist li.tasklist-ticket ol .inlinebuttons {
   display: none;
 }
