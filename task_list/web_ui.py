@@ -75,9 +75,36 @@ class RequestHandler(object):
         ticket.save_changes(author=get_reporter_id(req, 'author'),
                             comment=req.args.get("comment"))
 
-        return {"ok": "ok",
-                "remove": ticket['status'] in task_list.ticket_status_blacklist,
-                "values": ticket.values}
+        from trac.web.chrome import Chrome
+        from genshi.core import Markup
+        task = task_list.get_ticket(ticket.id)
+        task.ticket = ticket
+        if task.ticket['status'] == "closed":
+            task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Reopen
+              </label>
+""")]
+        else:
+            task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Close
+              </label>
+""")]
+            
+        data = {
+            "task_list": task_list,
+            "task": task,
+            }
+        list_item = Chrome(self.env).render_template(req, 'show_tasklist_ticket.html',
+                                                     data, 'text/html')
+        return {
+            "ok": "ok",
+            "remove": ticket['status'] in task_list.ticket_status_blacklist,
+            "list_item": list_item,
+            }
 
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
@@ -145,8 +172,24 @@ class RequestHandler(object):
         from pprint import pprint
         pprint(tickets) 
         tickets = {ticket['id']: ticket for ticket in tickets}
+        from genshi.core import Markup
         for task in child_tickets:
             task.ticket = tickets.get(task.ticket_id)
+            if task.ticket['status'] == "closed":
+                task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Reopen
+              </label>
+""")]
+            else:
+                task.actions = [Markup("""
+              <label class="button trac-delete">
+                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
+                Close
+              </label>
+""")]
+
             print task.order, task.ticket_id, task.ticket
 
 

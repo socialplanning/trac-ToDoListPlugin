@@ -10,10 +10,10 @@
   float: right;
   clear: both;
 }
-#tasklist li.odd {
+#tasklist li:nth-child(even) {
   background: #fbfbfb;
 }
-#tasklist li.even {
+#tasklist li:nth-child(odd) {
   background: #f6f6f6;
 }
 #tasklist li.tasklist-ticket {

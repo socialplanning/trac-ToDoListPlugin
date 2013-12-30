@@ -9,6 +9,9 @@
     <link rel="stylesheet" type="text/css" href="${req.href.chrome('common/css/ticket.css')}" />
     <link rel="stylesheet" type="text/css" href="${req.href.chrome('tasklist/tasklist.css')}" />
     <link rel="stylesheet" type="text/css" href="${req.href.chrome('tasklist/jquery.modal.css')}" />
+    <style type="text/css">
+      ${task_list.css}
+    </style>
     <script type="text/javascript" src="${req.href.chrome('tasklist/tasklist.js')}"></script>
     <script type="text/javascript" src="${req.href.chrome('tasklist/jquery.modal.min.js')}"></script>
   </head>
@@ -19,17 +22,9 @@
 
       <div class="trac-content">
         <ol id="tasklist" data-slug="${task_list.slug}" data-id="${task_list.id}">
-          <li class="tasklist-ticket ${i%2 and 'odd' or 'even'}" 
-              data-order="${task.order}" 
-              py:for="i, task in enumerate(child_tickets)">
-            <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
-               class="ticket" 
-               href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
-            <div class="inlinebuttons">
-              <input type="button" name="add" value="+ Ticket" title="Add new ticket below" />
-              <input type="button" class="trac-delete" name="act" value="Act!" title="Act on this ticket" />
-            </div>
-          </li>
+          <py:for each="i, task in enumerate(child_tickets)">
+            <xi:include href="show_tasklist_ticket.html" />
+          </py:for>
 
           <li id="tasklist-newticket">
             <form method="post" 

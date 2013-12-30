@@ -32,40 +32,35 @@ console.log(this_pos, next_pos, new_pos);
         var container = $("<div>").html("<form><textarea style='width:95%' rows='5' name='comment' placeholder='Enter your comment'></textarea><input type='submit' style='margin-left: 90%' value='Go' /></form>");
         container.find("form").on("submit", function() {
 
-            $.post(href, { __FORM_TOKEN: $("[name=__FORM_TOKEN]").val(), 
-                           comment: container.find("form [name=comment]").val() })
-             .done(function(resp) { 
-                resp = JSON.parse(resp); 
-                if( resp.remove ) { 
-                    li.remove(); 
-                }
-                if( showAfter ) {
-                    showModalTicket(ticket_href);
-                }
-            });
+            $.post(href, ticket_href, showAfter, li, 
+                   { comment: container.find("form [name=comment]").val() });
             $.modal.close();
             return false;
         });
         container.appendTo("body").modal();
         window.setTimeout(function() { container.find("form [name=comment]").focus(); }, 0);
-        return false;
+    } else {
+      actOnTicket(href, ticket_href, li, showAfter);
     }
+    return false;
+  });
 
-    var showAfter = evt.shiftKey;
-    var li = $(this).closest("li"),
-        href = li.find("a.ticket").attr("href"),
-        ticket_href = li.find("a.ticket").data("ticket-href");
-    $.post(href).done(function(resp) { 
+  function actOnTicket(href, ticket_href, li, showAfter, data) {
+    data = data || {};
+    data['__FORM_TOKEN'] = $("[name=__FORM_TOKEN]").val();
+    $.post(href, data).done(function(resp) { 
         resp = JSON.parse(resp); 
         if( resp.remove ) { 
             li.remove(); 
+        } else {
+            li.replaceWith(resp.list_item);
         }
         if( showAfter ) {
             showModalTicket(ticket_href);
         }
     });
     return false;
-  });
+  };
 
   function showModalTicket(href) {
     $.get(href, function(html) { 

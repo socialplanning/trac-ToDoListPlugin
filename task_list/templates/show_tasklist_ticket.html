@@ -1,0 +1,22 @@
+<div py:strip=""
+     xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:py="http://genshi.edgewall.org/"
+     xmlns:xi="http://www.w3.org/2001/XInclude"
+     xmlns:i18n="http://genshi.edgewall.org/i18n">
+
+  <li class="tasklist-ticket" data-order="${task.order}" data-status="${task.ticket.status}">
+    
+    <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
+       class="ticket" 
+       href="${req.href.tasklist(task_list.slug, 'ticket', task.ticket_id)}">${task.ticket.summary}</a>
+    <div class="inlinebuttons">
+      <input type="button" name="add" value="+ Ticket" title="Add new ticket below" />
+      
+      <py:for each="action in task.actions">
+        ${action}
+      </py:for>
+    </div>
+  </li>
+
+</div>
+

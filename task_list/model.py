@@ -77,6 +77,15 @@ class TaskList(object):
             statuses = ["closed"]
         return statuses
 
+    @property
+    def css(self):
+        return """
+li[data-status=closed] a {
+  font-style: italic;
+  text-decoration: line-through;
+}
+"""
+
     def _ticket_status_blacklist_sql(self):
         sql = []
         params = []
