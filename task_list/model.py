@@ -71,14 +71,27 @@ class TaskList(object):
             'active_tickets': self.active_tickets
            } 
 
-    def get_action_for_ticket(self, ticket):
-        map = None
-        if self.configuration:
-            map = self.configuration.get("ticket_action_map")
-        if map is None:
-            map = {"*": "resolve"}
-        action = map.get(ticket['status']) or map.get("*")
-        return action
+    def get_all_actions(self):
+        return ["resolve", "reopen", "leave"]
+
+    def render_action(self, action):
+        from genshi.core import Markup
+        if action == "reopen":
+            return Markup("""
+              <label class="button">
+                <input type="hidden" name="action" value="reopen" />
+                <input checked="checked" type="checkbox" name="act" />
+                Reopen
+              </label>
+""")
+        if action == "resolve":
+            return Markup("""
+              <label class="button trac-delete">
+                <input type="hidden" name="action" value="resolve" />
+                <input type="checkbox" name="act" />
+                Close
+              </label>
+""")
 
     @property
     def ticket_status_blacklist(self):
@@ -151,6 +164,7 @@ class Task(object):
         self.sub_task_list = None
         if sub_task_list is not None:
             self.sub_task_list = TaskList.load(task_list.env, id=sub_task_list)
+        self.ticket = None
 
     def to_json(self):
         return {

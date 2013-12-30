@@ -43,20 +43,12 @@ class RequestHandler(object):
         from genshi.core import Markup
         task = task_list.get_ticket(ticket.id)
         task.ticket = ticket
-        if task.ticket['status'] == "closed":
-            task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Reopen
-              </label>
-""")]
-        else:
-            task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Close
-              </label>
-""")]
+        task.actions = []
+        from trac.ticket.api import TicketSystem
+        allowed = task_list.get_all_actions()
+        for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
+            if action in allowed:
+                task.actions.append(action)
             
         data = {
             "task_list": task_list,
@@ -78,7 +70,7 @@ class RequestHandler(object):
 
         task_list = TaskList.load(self.env, slug=tasklist_id)
 
-        user_action = task_list.get_action_for_ticket(ticket)
+        user_action = req.args['action']
 
         from trac.ticket.api import TicketSystem
         system = TicketSystem(self.env)
@@ -97,23 +89,15 @@ class RequestHandler(object):
                             comment=req.args.get("comment"))
 
         from trac.web.chrome import Chrome
-        from genshi.core import Markup
+        from trac.ticket.api import TicketSystem
+        allowed = task_list.get_all_actions()
         task = task_list.get_ticket(ticket.id)
         task.ticket = ticket
-        if task.ticket['status'] == "closed":
-            task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Reopen
-              </label>
-""")]
-        else:
-            task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Close
-              </label>
-""")]
+        task.actions = []
+        for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
+            if action in allowed:
+                task.actions.append(action)
+
             
         data = {
             "task_list": task_list,
@@ -191,47 +175,15 @@ class RequestHandler(object):
         task_list = TaskList.load(self.env, slug=tasklist_id)
         child_tickets = task_list.list_tickets()
         
-        from pprint import pprint
-        pprint(child_tickets)
-        from trac.ticket.query import Query
-        query = Query.from_string(
-            self.env, "col=summary&col=priority&col=owner&col=modified&col=description&col=status" + (
-                ("&" + "&".join("id=%s" % task.ticket_id for task in child_tickets)) if child_tickets else ""))
-        tickets = query.execute()
-
-        """
-        from trac.web.chrome import web_context, Chrome
-        context = web_context(req, "query")
-
-        data = query.template_data(context, tickets, req=req)
-
-        return "query_results.html", data, None
-        """
-
-        from pprint import pprint
-        pprint(tickets) 
-        tickets = {ticket['id']: ticket for ticket in tickets}
-        from genshi.core import Markup
+        from trac.ticket.api import TicketSystem
+        from trac.ticket.model import Ticket
+        allowed = task_list.get_all_actions()
         for task in child_tickets:
-            task.ticket = tickets.get(task.ticket_id)
-            if task.ticket['status'] == "closed":
-                task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input checked="checked" type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Reopen
-              </label>
-""")]
-            else:
-                task.actions = [Markup("""
-              <label class="button trac-delete">
-                <input type="checkbox" name="act" value="Act!" title="Act on this ticket" />
-                Close
-              </label>
-""")]
-
-            print task.order, task.ticket_id, task.ticket
-
-
+            task.ticket = Ticket(self.env, tkt_id=task.ticket_id)
+            task.actions = []
+            for action in TicketSystem(self.env).get_available_actions(req, task.ticket):
+                if action in allowed:
+                    task.actions.append(action)
         return "show_tasklist.html", {"task_list": task_list, 
                                       "child_tickets": child_tickets}, None
 

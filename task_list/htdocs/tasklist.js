@@ -32,15 +32,18 @@ console.log(this_pos, next_pos, new_pos);
         var container = $("<div>").html("<form><textarea style='width:95%' rows='5' name='comment' placeholder='Enter your comment'></textarea><input type='submit' style='margin-left: 90%' value='Go' /></form>");
         container.find("form").on("submit", function() {
 
-            $.post(href, ticket_href, showAfter, li, 
-                   { comment: container.find("form [name=comment]").val() });
+            $.post(href, ticket_href, li, showAfter,
+                   { action: $(this).siblings("[name=action").val(),
+                     comment: container.find("form [name=comment]").val() });
             $.modal.close();
             return false;
         });
         container.appendTo("body").modal();
         window.setTimeout(function() { container.find("form [name=comment]").focus(); }, 0);
     } else {
-      actOnTicket(href, ticket_href, li, showAfter);
+      actOnTicket(href, ticket_href, li, showAfter, { 
+          action: $(this).siblings("[name=action").val() }
+                 );
     }
     return false;
   });
@@ -48,7 +51,7 @@ console.log(this_pos, next_pos, new_pos);
   function actOnTicket(href, ticket_href, li, showAfter, data) {
     data = data || {};
     data['__FORM_TOKEN'] = $("[name=__FORM_TOKEN]").val();
-    $.post(href, data).done(function(resp) { 
+    $.post(href + "/act", data).done(function(resp) { 
         resp = JSON.parse(resp); 
         if( resp.remove ) { 
             li.remove(); 
