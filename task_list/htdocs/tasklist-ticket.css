@@ -1,0 +1,5 @@
+#content.ticket .trac-topnav .ticket-tasklists a:not(:last-child) {
+  border-right: 1px solid #eee;
+  margin-right: 4px;
+  padding-right: 4px;
+}

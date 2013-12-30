@@ -3,6 +3,18 @@ import json
 class TaskList(object):
 
     @classmethod
+    def containing_ticket(cls, env, ticket_id):
+        with env.db_query as db:
+            tasklists = db("SELECT DISTINCT id, slug, name, "
+                           "created_at, created_by, "
+                           "description, configuration "
+                           "FROM task_list "
+                           "JOIN task_list_child_ticket child "
+                           " ON child.task_list=task_list.id "
+                           "WHERE child.ticket=%s", [ticket_id])
+        return [TaskList(env, *tasklist) for tasklist in tasklists]
+
+    @classmethod
     def load(cls, env, slug=None, id=None):
         with env.db_query as db:
             if slug:

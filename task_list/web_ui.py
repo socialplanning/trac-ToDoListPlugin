@@ -4,7 +4,7 @@ import re
 from trac.core import *
 from trac.util import get_reporter_id
 from trac.util.translation import _
-from trac.web.api import IRequestHandler
+from trac.web.api import IRequestHandler, ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, INavigationContributor, Chrome
 
 from task_list.model import TaskList
@@ -130,16 +130,34 @@ class RequestHandler(object):
     def put_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
         ticket_id = int(req.args["tasklist_ticket"]) #@@TODO
-        order = float(req.args["order"]) #@@TODO
-
+        if 'order' in req.args:
+            order = float(req.args["order"]) #@@TODO
+        else:
+            order = None
+        
         with self.env.db_transaction as db:
             # @@TODO assert tasklist with tasklist_id exists
             # @@TODO assert ticket with id exists
             # @@TODO assert child ticket with (tasklist_id, id) does not exist
-            db("INSERT INTO task_list_child_ticket "
-               "  (task_list, ticket, `order`) VALUES "
-               "  (%s, %s, %s)", [tasklist_id, ticket_id, order])
-        return {"ok": "ok"}
+
+            if order is not None:
+                db("INSERT INTO task_list_child_ticket "
+                   "  (task_list, ticket, `order`) VALUES "
+                   "  (%s, %s, %s)", [tasklist_id, ticket_id, order])
+            else: # put it at the end of the list
+                db("INSERT INTO task_list_child_ticket "
+                   "  (task_list, ticket, `order`) VALUES "
+                   "  (%s, %s, "
+                   "   (SELECT MAX(`order`) + 1 "
+                   "    FROM task_list_child_ticket "
+                   "    WHERE task_list=%s) "
+                   "  )",
+                   [tasklist_id, ticket_id, tasklist_id])
+
+        return {
+            "ok": "ok",
+            "tasklist": TaskList.load(self.env, id=tasklist_id).to_json(),
+            }
 
     def show_ticket_in_tasklist(cls, self, req):
         tasklist_id = req.args['tasklist_id']
@@ -238,7 +256,28 @@ class RequestHandler(object):
         pass
 
 class TaskListPlugin(Component):
-    implements(IRequestHandler, ITemplateProvider, INavigationContributor)
+    implements(IRequestHandler, ITemplateStreamFilter,
+               ITemplateProvider, INavigationContributor)
+
+    # ITemplateStreamFilter methods
+
+    def filter_stream(self, req, method, filename, stream, data):
+        if filename == 'ticket.html':
+            from trac.web.chrome import add_stylesheet, add_script, add_script_data
+            add_stylesheet(req, "tasklist/jquery.modal.css")
+            add_script(req, "tasklist/jquery.modal.min.js")
+            add_stylesheet(req, "tasklist/tasklist-ticket.css")
+            add_script(req, "tasklist/tasklist-ticket.js")
+            add_script_data(req, {"ToDoList": {
+                        "ticket": {
+                            data['ticket'].id: {
+                                "tasklists": [
+                                tasklist.to_json() for tasklist in
+                                TaskList.containing_ticket(self.env, data['ticket'].id)
+                                ]
+                            }}
+                        }})
+        return stream
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
@@ -302,7 +341,7 @@ class TaskListPlugin(Component):
         req.args['tasklist_route'] = "tasklist.ticket"
         req.args['tasklist_id'] = path[1]
         req.args['tasklist_ticket'] = path[3]
-        if len(path) == 4:
+        if len(path) == 5:
             req.args['tasklist_route'] = "tasklist.act_on_ticket"
         return True
 
