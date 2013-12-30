@@ -96,29 +96,35 @@ li[data-status=closed] a {
 
     def list_tickets(self):
         sql, params = self._ticket_status_blacklist_sql()
-        child_tickets = self.env.db_query("SELECT ticket, `order` "
-                           "FROM task_list_child_ticket JOIN ticket "
-                           "ON ticket.id=task_list_child_ticket.ticket "
-                           "WHERE %s "
-                           "AND task_list_child_ticket.task_list=%%s "
-                           "ORDER BY task_list_child_ticket.`order` ASC" % sql, 
-                           params + [self.id])
+        child_tickets = self.env.db_query(
+            "SELECT child.ticket, child.`order`, parent.task_list "
+            "  FROM task_list_child_ticket child "
+            " JOIN ticket ON ticket.id=child.ticket "
+            " LEFT JOIN task_list_parent_ticket parent "
+            "   ON parent.ticket=child.ticket "
+            "WHERE %s "
+            "AND child.task_list=%%s "
+            "ORDER BY child.`order` ASC" % sql, 
+            params + [self.id])
         return [
-            Task(self, ticket[0], ticket[1])
+            Task(self, *ticket)
             for ticket in child_tickets
             ]
 
     def get_ticket(self, ticket):
-        this_ticket = self.env.db_query("SELECT ticket, `order` "
-                         "FROM task_list_child_ticket "
-                         "WHERE task_list=%s "
-                         "AND ticket=%s",
-                         [self.id, ticket])
+        this_ticket = self.env.db_query(
+            "SELECT child.ticket, `order`, parent.task_list "
+            "FROM task_list_child_ticket child"
+            " LEFT JOIN task_list_parent_ticket parent "
+            "   ON parent.ticket=child.ticket "
+            "WHERE child.task_list=%s "
+            "AND child.ticket=%s",
+            [self.id, ticket])
         try:
             this_ticket = this_ticket[0]
         except IndexError:
             raise #@@TODO
-        return Task(self, this_ticket[0], this_ticket[1])
+        return Task(self, *this_ticket)
 
 class Task(object):
     
@@ -126,10 +132,13 @@ class Task(object):
         return u'<Task (ticket %s) in TaskList %s>' % (
             self.ticket_id, self.task_list.slug)
 
-    def __init__(self, task_list, ticket, order):
+    def __init__(self, task_list, ticket, order, sub_task_list=None):
         self.task_list = task_list
         self.ticket_id = ticket
         self.order = order
+        self.sub_task_list = None
+        if sub_task_list is not None:
+            self.sub_task_list = TaskList.load(task_list.env, id=sub_task_list)
 
     def to_json(self):
         return {

@@ -53,7 +53,8 @@ console.log(this_pos, next_pos, new_pos);
         if( resp.remove ) { 
             li.remove(); 
         } else {
-            li.replaceWith(resp.list_item);
+            var new_item = $(resp.list_item).installSublists();
+            li.replaceWith(new_item);
         }
         if( showAfter ) {
             showModalTicket(ticket_href);
@@ -90,9 +91,33 @@ console.log(this_pos, next_pos, new_pos);
     var data = $(this).serialize();
     $.post($(this).attr("action"), data).done(function(resp) {
       resp = JSON.parse(resp);
-      $(resp.list_item).insertBefore(form);
+      $(resp.list_item).installSublists().insertBefore(form);
     });
     $(form).find("input[name=field_summary]").val("");
     return false;
   });
+
+  $.fn.installSublists = function() {
+      return this.each(function() {
+          if( !$(this).data("sublist") ) return;
+          $("<span class='expander'>&nbsp</span>").prependTo(this);
+      });
+  };
+
+  $("#tasklist").on("click", ".expander", function() {
+    var li = $(this).closest("li");
+    $(this).toggleClass("expanded");
+    if( $(this).hasClass("expanded") ) {
+/*@@TODO*/
+        $.get("./"+li.data("sublist")).done(function(html) {
+            var sublist = $(html).find("#tasklist").removeAttr("id");
+            sublist.find("li").installSublists();
+            sublist.appendTo(li);
+        });
+    } else {
+        li.find("ol").remove();
+    }
+  });
+
+  $("#tasklist li.tasklist-ticket").installSublists();
 });

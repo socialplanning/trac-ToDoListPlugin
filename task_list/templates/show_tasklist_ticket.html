@@ -4,7 +4,11 @@
      xmlns:xi="http://www.w3.org/2001/XInclude"
      xmlns:i18n="http://genshi.edgewall.org/i18n">
 
-  <li class="tasklist-ticket" data-order="${task.order}" data-status="${task.ticket.status}">
+  <li class="tasklist-ticket" 
+      data-order="${task.order}" 
+      data-status="${task.ticket.status}"
+      data-sublist="${task.sub_task_list and task.sub_task_list.slug}"
+      >
     
     <a data-ticket-href="${req.href.ticket(task.ticket.id)}" 
        class="ticket" 
